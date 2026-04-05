@@ -10,7 +10,8 @@ public class DeluxeRoom extends Room {
 
     @Override
     public double calculateTariff(int daysStayed) {
-        // Deluxe adds a flat premium charge of 500
-        return (getRoomType().getBaseTariff() * daysStayed) + 500.0;
+        // Deluxe adds amenity-based premium (currently totals 500)
+        double premium = (freeWifi ? 200.0 : 0.0) + (complimentaryBreakfast ? 300.0 : 0.0);
+        return (getRoomType().getBaseTariff() * daysStayed) + premium;
     }
 }

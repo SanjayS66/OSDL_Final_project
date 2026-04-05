@@ -20,6 +20,6 @@ public class Customer implements Serializable {
     
     @Override
     public String toString() {
-        return name + " (ID: " + customerId + ") - Room: " + allocatedRoomNumber;
+        return name + " (ID: " + customerId + ", Contact: " + contactNumber + ") - Room: " + allocatedRoomNumber;
     }
 }

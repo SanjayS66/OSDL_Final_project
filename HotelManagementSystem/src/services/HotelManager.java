@@ -32,6 +32,14 @@ public class HotelManager {
         return available;
     }
 
+    public List<Room> getAllRooms() {
+        return new ArrayList<>(rooms);
+    }
+
+    public int getTotalRooms() {
+        return rooms.size();
+    }
+
     // Synchronized method to prevent double booking in multithreaded environments
     public synchronized boolean bookRoom(int roomNumber, Customer customer) {
         for (Room r : rooms) {
