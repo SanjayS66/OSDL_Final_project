@@ -8,4 +8,5 @@ models/Customer.class
 services/FileManager.class
 models/StandardRoom.class
 services/BookingTask.class
+services/HotelManager$1.class
 services/HotelManager.class
