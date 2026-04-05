@@ -88,11 +88,11 @@ public class Dashboard {
         VBox brand = new VBox(4);
         brand.setPadding(new Insets(28, 20, 24, 20));
 
-        Label hotelIcon = new Label("◈");
+        Label hotelIcon = new Label("⌂");
         hotelIcon.setFont(Font.font("Georgia", FontWeight.BOLD, 26));
         hotelIcon.setTextFill(Color.web(C_ACCENT));
 
-        Label brandName = new Label("GRAND VISTA");
+        Label brandName = new Label("Lorem Ipsum");
         brandName.setFont(Font.font("Georgia", FontWeight.BOLD, 15));
         brandName.setTextFill(Color.web(C_TEXT));
 

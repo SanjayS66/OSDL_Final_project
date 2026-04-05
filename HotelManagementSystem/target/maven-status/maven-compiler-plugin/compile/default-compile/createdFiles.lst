@@ -1,0 +1,11 @@
+ui/MainApp.class
+models/Room.class
+models/BookingPair.class
+models/DeluxeRoom.class
+ui/Dashboard.class
+models/RoomType.class
+models/Customer.class
+services/FileManager.class
+models/StandardRoom.class
+services/BookingTask.class
+services/HotelManager.class
