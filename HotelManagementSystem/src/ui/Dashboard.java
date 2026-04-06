@@ -76,7 +76,8 @@ public class Dashboard {
     private String activePage = "home";
     private String hotelName = "Lorem Ipsum";
     private boolean darkMode = true;
-    private boolean settingsAuthenticated = false;
+    private boolean adminAuthenticated = false;
+    private String pendingProtectedPage = null;
 
     // sidebar nav buttons kept for highlight toggling
     private Button navHome, navAddRoom, navBookRoom, navCheckout, navAllRooms, navSettings;
@@ -110,8 +111,8 @@ public class Dashboard {
     // ══════════════════════════════════════════════════════════════════════════
     private VBox buildSidebar() {
         VBox sidebar = new VBox(0);
-        sidebar.setPrefWidth(220);
-        sidebar.setMinWidth(220);
+        sidebar.setPrefWidth(250);
+        sidebar.setMinWidth(250);
         sidebar.setStyle("-fx-background-color:" + C_SIDEBAR
                 + "; -fx-border-color:" + C_BORDER
                 + "; -fx-border-width: 0 1 0 0;");
@@ -127,16 +128,16 @@ public class Dashboard {
         brand.setEffect(new DropShadow(12, Color.web("#00000066")));
 
         Label hotelIcon = new Label("⌂");
-        hotelIcon.setFont(Font.font("Georgia", FontWeight.BOLD, 32));
+        hotelIcon.setFont(Font.font("Georgia", FontWeight.BOLD, 36));
         hotelIcon.setTextFill(Color.web(C_ACCENT));
 
         Label brandName = new Label(hotelName);
-        brandName.setFont(Font.font("Georgia", FontWeight.EXTRA_BOLD, 23));
+        brandName.setFont(Font.font("Georgia", FontWeight.EXTRA_BOLD, 28));
         brandName.setTextFill(Color.web(C_TEXT));
         brandName.setStyle("-fx-letter-spacing: 0.8px;");
 
         Label brandSub = new Label("Hotel Management");
-        brandSub.setFont(Font.font("Courier New", FontWeight.BOLD, 11));
+        brandSub.setFont(Font.font("Avenir Next", FontWeight.MEDIUM, 12));
         brandSub.setTextFill(Color.web(C_MUTED));
 
         brand.getChildren().addAll(hotelIcon, brandName, brandSub);
@@ -146,7 +147,7 @@ public class Dashboard {
 
         // ── section label ─────────────────────────────────────────────────────
         Label navLabel = new Label("NAVIGATION");
-        navLabel.setFont(Font.font("Courier New", FontWeight.BOLD, 9));
+        navLabel.setFont(Font.font("Avenir Next", FontWeight.BOLD, 10));
         navLabel.setTextFill(Color.web(C_MUTED));
         navLabel.setPadding(new Insets(12, 20, 6, 20));
 
@@ -165,7 +166,7 @@ public class Dashboard {
         Separator sep2 = styledSeparator();
 
         Label footer = new Label("OOSD Week 10 Project");
-        footer.setFont(Font.font("Courier New", 9));
+        footer.setFont(Font.font("Avenir Next", 10));
         footer.setTextFill(Color.web(C_MUTED));
         footer.setPadding(new Insets(12, 20, 20, 20));
 
@@ -180,12 +181,12 @@ public class Dashboard {
         inner.setAlignment(Pos.CENTER_LEFT);
 
         Label ic = new Label(icon);
-        ic.setFont(Font.font("Georgia", FontWeight.BOLD, 14));
+        ic.setFont(Font.font("Georgia", FontWeight.BOLD, 15));
         ic.setMinWidth(20);
         ic.setTextFill(Color.web(navIconColor(pageId)));
 
         Label lbl = new Label(label);
-        lbl.setFont(Font.font("Courier New", FontWeight.NORMAL, 13));
+        lbl.setFont(Font.font("Avenir Next", FontWeight.NORMAL, 14));
         lbl.setTextFill(Color.web(C_TEXT));
 
         inner.getChildren().addAll(ic, lbl);
@@ -239,6 +240,11 @@ public class Dashboard {
     //  NAVIGATION / TRANSITIONS
     // ══════════════════════════════════════════════════════════════════════════
     private void navigateTo(String pageId) {
+        if (("addRoom".equals(pageId) || "settings".equals(pageId)) && !adminAuthenticated) {
+            pendingProtectedPage = pageId;
+            pageId = "adminLogin";
+        }
+
         activePage = pageId;
         highlightNav(pageId);
 
@@ -248,6 +254,7 @@ public class Dashboard {
             case "checkout" -> buildCheckoutPage();
             case "allRooms" -> buildAllRoomsPage();
             case "settings" -> buildSettingsPage();
+            case "adminLogin" -> buildAdminLoginPage();
             default         -> buildHomePage();
         };
 
@@ -295,20 +302,20 @@ public class Dashboard {
         };
     }
 
-    private javafx.scene.Node buildSettingsPage() {
-        ScrollPane page = centeredFormPage("Settings", "Update hotel branding and interface theme");
+    private javafx.scene.Node buildAdminLoginPage() {
+        ScrollPane page = centeredFormPage("Admin Login", "Sign in to access Add Room and Settings");
         VBox outer = (VBox) page.getContent();
 
         VBox card = formCard();
 
-        Label authState = new Label(settingsAuthenticated ? "Admin session active" : "Admin login required");
-        authState.setFont(Font.font("Courier New", FontWeight.BOLD, 11));
-        authState.setTextFill(Color.web(settingsAuthenticated ? C_GREEN : C_MUTED));
+        Label info = new Label("Admin access is required for these sections.");
+        info.setFont(Font.font("Avenir Next", FontWeight.BOLD, 12));
+        info.setStyle("-fx-text-fill: " + C_RED + ";");
 
         TextField txtUsername = styledField("Username");
         PasswordField txtPassword = new PasswordField();
         txtPassword.setPromptText("Password");
-        txtPassword.setFont(Font.font("Courier New", 13));
+        txtPassword.setFont(Font.font("Avenir Next", 14));
         txtPassword.setStyle("-fx-background-color:" + C_BG
                 + "; -fx-text-fill:" + C_TEXT
                 + "; -fx-prompt-text-fill:" + C_MUTED
@@ -316,8 +323,47 @@ public class Dashboard {
                 + "; -fx-border-radius:6; -fx-background-radius:6;"
                 + "-fx-padding: 9 12;");
 
-        Label loginFeedback = feedbackLabel();
-        Button btnLogin = primaryBtn("Admin Login");
+        Label feedback = feedbackLabel();
+        Button btnLogin = primaryBtn("Log In");
+        Button btnBack = secondaryBtn("Back to Dashboard");
+
+        btnLogin.setOnAction(e -> {
+            String user = txtUsername.getText().trim();
+            String pass = txtPassword.getText();
+            if (ADMIN_USERNAME.equals(user) && ADMIN_PASSWORD.equals(pass)) {
+                adminAuthenticated = true;
+                feedbackOk(feedback, "✔  Login successful.");
+                String destination = pendingProtectedPage == null ? "home" : pendingProtectedPage;
+                pendingProtectedPage = null;
+                navigateTo(destination);
+            } else {
+                feedbackError(feedback, "⚠  Invalid credentials. Use admin / admin123.");
+            }
+        });
+
+        btnBack.setOnAction(e -> {
+            pendingProtectedPage = null;
+            navigateTo("home");
+        });
+
+        card.getChildren().addAll(
+                info,
+                formRow("Admin Username", txtUsername),
+                formRow("Admin Password", txtPassword),
+                feedback,
+                btnLogin,
+                btnBack
+        );
+
+        outer.getChildren().add(card);
+        return page;
+    }
+
+    private javafx.scene.Node buildSettingsPage() {
+        ScrollPane page = centeredFormPage("Settings", "Update hotel branding and interface theme");
+        VBox outer = (VBox) page.getContent();
+
+        VBox card = formCard();
 
         TextField txtHotelName = styledField("Hotel Name");
         txtHotelName.setText(hotelName);
@@ -336,32 +382,6 @@ public class Dashboard {
         Label settingsFeedback = feedbackLabel();
         Button btnSave = primaryBtn("Save Settings");
         Button btnLogout = secondaryBtn("Logout");
-
-        txtHotelName.setDisable(!settingsAuthenticated);
-        txtStandardTariff.setDisable(!settingsAuthenticated);
-        txtDeluxeTariff.setDisable(!settingsAuthenticated);
-        cbTheme.setDisable(!settingsAuthenticated);
-        btnSave.setDisable(!settingsAuthenticated);
-        btnLogout.setDisable(!settingsAuthenticated);
-
-        btnLogin.setOnAction(e -> {
-            String user = txtUsername.getText().trim();
-            String pass = txtPassword.getText();
-            if (ADMIN_USERNAME.equals(user) && ADMIN_PASSWORD.equals(pass)) {
-                settingsAuthenticated = true;
-                authState.setText("Admin session active");
-                authState.setTextFill(Color.web(C_GREEN));
-                feedbackOk(loginFeedback, "✔  Login successful.");
-                txtHotelName.setDisable(false);
-                txtStandardTariff.setDisable(false);
-                txtDeluxeTariff.setDisable(false);
-                cbTheme.setDisable(false);
-                btnSave.setDisable(false);
-                btnLogout.setDisable(false);
-            } else {
-                feedbackError(loginFeedback, "⚠  Invalid credentials. Use admin / admin123.");
-            }
-        });
 
         btnSave.setOnAction(e -> {
             String newHotelName = txtHotelName.getText().trim();
@@ -392,16 +412,12 @@ public class Dashboard {
         });
 
         btnLogout.setOnAction(e -> {
-            settingsAuthenticated = false;
+            adminAuthenticated = false;
+            pendingProtectedPage = null;
             navigateTo("settings");
         });
 
         card.getChildren().addAll(
-                authState,
-                formRow("Admin Username", txtUsername),
-                formRow("Admin Password", txtPassword),
-                loginFeedback,
-                btnLogin,
                 styledSeparator(),
                 formRow("Hotel Name", txtHotelName),
                 formRow("Standard Base Tariff", txtStandardTariff),
@@ -474,11 +490,11 @@ public class Dashboard {
 
         VBox titleBox = new VBox(4);
         Label title = new Label("Dashboard");
-        title.setFont(Font.font("Georgia", FontWeight.BOLD, 28));
+        title.setFont(Font.font("Georgia", FontWeight.BOLD, 30));
         title.setTextFill(Color.web(C_TEXT));
 
         Label subtitle = new Label("Live overview of hotel operations");
-        subtitle.setFont(Font.font("Courier New", 12));
+        subtitle.setFont(Font.font("Avenir Next", 13));
         subtitle.setTextFill(Color.web(C_MUTED));
         titleBox.getChildren().addAll(title, subtitle);
 
@@ -487,7 +503,7 @@ public class Dashboard {
 
         // live clock
         Label clock = new Label();
-        clock.setFont(Font.font("Courier New", FontWeight.BOLD, 12));
+        clock.setFont(Font.font("Avenir Next", FontWeight.BOLD, 13));
         clock.setTextFill(Color.web(C_MUTED));
         Timeline ticker = new Timeline(new KeyFrame(Duration.seconds(1), ev -> {
             clock.setText(LocalDateTime.now()
@@ -531,7 +547,7 @@ public class Dashboard {
         var avail = manager.getAvailableRooms();
         if (avail.isEmpty()) {
             Label none = new Label("No rooms currently available.");
-            none.setFont(Font.font("Courier New", 12));
+            none.setFont(Font.font("Avenir Next", 13));
             none.setTextFill(Color.web(C_MUTED));
             roomList.getChildren().add(none);
         } else {
@@ -559,12 +575,12 @@ public class Dashboard {
         top.setAlignment(Pos.CENTER_LEFT);
     StackPane iconChip = iconChip(statIcon(label), statAccent(label), 20, 11);
         Label lbl = new Label(label);
-        lbl.setFont(Font.font("Courier New", 11));
+        lbl.setFont(Font.font("Avenir Next", 12));
         lbl.setTextFill(Color.web(C_MUTED));
     top.getChildren().addAll(iconChip, lbl);
 
         Label val = new Label(value);
-        val.setFont(Font.font("Georgia", FontWeight.BOLD, 36));
+        val.setFont(Font.font("Georgia", FontWeight.BOLD, 38));
         val.setTextFill(Color.web(statAccent(label)));
 
         card.getChildren().addAll(top, val);
@@ -621,11 +637,11 @@ public class Dashboard {
         StackPane iconChip = iconChip(icon, accent, 30, 16);
 
         Label t = new Label(title);
-        t.setFont(Font.font("Courier New", FontWeight.BOLD, 13));
+        t.setFont(Font.font("Avenir Next", FontWeight.BOLD, 14));
         t.setTextFill(Color.web(C_TEXT));
 
         Label d = new Label(desc);
-        d.setFont(Font.font("Courier New", 11));
+        d.setFont(Font.font("Avenir Next", 12));
         d.setTextFill(Color.web(C_MUTED));
         d.setWrapText(true);
 
@@ -664,12 +680,12 @@ public class Dashboard {
                 + "; -fx-border-radius:8; -fx-border-width:1;");
 
         Label roomNum = new Label("#" + r.getRoomNumber());
-        roomNum.setFont(Font.font("Courier New", FontWeight.BOLD, 14));
+        roomNum.setFont(Font.font("Avenir Next", FontWeight.BOLD, 15));
         roomNum.setTextFill(Color.web(C_ACCENT));
         roomNum.setMinWidth(50);
 
         Label type = new Label(r.getRoomType().toString());
-        type.setFont(Font.font("Courier New", 12));
+        type.setFont(Font.font("Avenir Next", 13));
         type.setTextFill(Color.web(C_TEXT));
 
         Region sp = new Region();
@@ -685,11 +701,11 @@ public class Dashboard {
             + "-fx-border-width:1;");
 
         Label dot = new Label("●");
-        dot.setFont(Font.font("System", 10));
+        dot.setFont(Font.font("System", 11));
         dot.setTextFill(Color.web(C_GREEN));
 
         Label badgeText = new Label("Available");
-        badgeText.setFont(Font.font("Courier New", FontWeight.BOLD, 11));
+        badgeText.setFont(Font.font("Avenir Next", FontWeight.BOLD, 12));
         badgeText.setTextFill(Color.web(C_GREEN));
 
         badge.getChildren().addAll(dot, badgeText);
@@ -728,10 +744,14 @@ public class Dashboard {
                 int roomNo = Integer.parseInt(numTxt);
                 Room newRoom = (type == RoomType.DELUXE)
                         ? new DeluxeRoom(roomNo) : new StandardRoom(roomNo);
-                manager.addRoom(newRoom);
-                feedbackOk(feedback, "✔  Room " + roomNo + " added successfully.");
-                txtRoomNumber.clear();
-                cbType.setValue(null);
+                boolean added = manager.addRoom(newRoom);
+                if (added) {
+                    feedbackOk(feedback, "✔  Room " + roomNo + " added successfully.");
+                    txtRoomNumber.clear();
+                    cbType.setValue(null);
+                } else {
+                    feedbackError(feedback, "⚠  Room number " + roomNo + " already exists.");
+                }
             } catch (NumberFormatException ex) {
                 feedbackError(feedback, "⚠  Room number must be a valid integer.");
             }
@@ -901,10 +921,10 @@ public class Dashboard {
         // header
         VBox header = new VBox(4);
         Label title = new Label("All Rooms");
-        title.setFont(Font.font("Georgia", FontWeight.BOLD, 28));
+        title.setFont(Font.font("Georgia", FontWeight.BOLD, 30));
         title.setTextFill(Color.web(C_TEXT));
         Label sub = new Label("Full inventory of hotel rooms");
-        sub.setFont(Font.font("Courier New", 12));
+        sub.setFont(Font.font("Avenir Next", 13));
         sub.setTextFill(Color.web(C_MUTED));
         header.getChildren().addAll(title, sub);
 
@@ -965,7 +985,7 @@ public class Dashboard {
                 Label none = new Label(query.isEmpty() && "All Status".equals(selectedStatus) && "All Types".equals(selectedType)
                         ? "No rooms registered yet. Add rooms to get started."
                         : "No rooms match the selected filters.");
-                none.setFont(Font.font("Courier New", 12));
+                none.setFont(Font.font("Avenir Next", 13));
                 none.setTextFill(Color.web(C_MUTED));
                 emptyRow.getChildren().add(none);
                 tableBody.getChildren().add(emptyRow);
@@ -995,7 +1015,7 @@ public class Dashboard {
         Button refreshBtn = secondaryBtn("Refresh");
         Label refreshIcon = new Label("↺");
         refreshIcon.setTextFill(Color.web(C_BLUE));
-        refreshIcon.setFont(Font.font("Georgia", FontWeight.BOLD, 14));
+        refreshIcon.setFont(Font.font("Georgia", FontWeight.BOLD, 15));
         refreshBtn.setGraphic(refreshIcon);
         refreshBtn.setContentDisplay(ContentDisplay.LEFT);
         refreshBtn.setGraphicTextGap(6);
@@ -1035,7 +1055,7 @@ public class Dashboard {
 
     private Label tableHeaderCell(String text, double width) {
         Label l = new Label(text.toUpperCase());
-        l.setFont(Font.font("Courier New", FontWeight.BOLD, 10));
+        l.setFont(Font.font("Avenir Next", FontWeight.BOLD, 11));
         l.setTextFill(Color.web(C_MUTED));
         if (width == Double.MAX_VALUE) HBox.setHgrow(l, Priority.ALWAYS);
         else l.setMinWidth(width);
@@ -1059,12 +1079,12 @@ public class Dashboard {
                 + "; -fx-border-width:" + bw + ";");
 
         Label num = new Label("#" + r.getRoomNumber());
-        num.setFont(Font.font("Courier New", FontWeight.BOLD, 13));
+        num.setFont(Font.font("Avenir Next", FontWeight.BOLD, 14));
         num.setTextFill(Color.web(C_ACCENT));
         num.setMinWidth(70);
 
         Label type = new Label(r.getRoomType().toString());
-        type.setFont(Font.font("Courier New", 12));
+        type.setFont(Font.font("Avenir Next", 13));
         type.setTextFill(Color.web(C_TEXT));
         type.setMinWidth(120);
 
@@ -1072,10 +1092,10 @@ public class Dashboard {
         statusBadge.setAlignment(Pos.CENTER_LEFT);
         statusBadge.setMinWidth(120);
         Label dot = new Label("●");
-        dot.setFont(Font.font("System", 10));
+        dot.setFont(Font.font("System", 11));
         dot.setTextFill(Color.web(avail ? C_GREEN : C_RED));
         Label statusText = new Label(avail ? "Available" : "Occupied");
-        statusText.setFont(Font.font("Courier New", 12));
+        statusText.setFont(Font.font("Avenir Next", 13));
         statusText.setTextFill(Color.web(avail ? C_GREEN : C_RED));
         statusBadge.getChildren().addAll(dot, statusText);
 
@@ -1084,7 +1104,7 @@ public class Dashboard {
             ? "Guest"
             : bookedCustomer.getName();
         Label guest = new Label(avail ? "—" : guestName);
-        guest.setFont(Font.font("Courier New", 12));
+        guest.setFont(Font.font("Avenir Next", 13));
         guest.setTextFill(Color.web(C_MUTED));
         HBox.setHgrow(guest, Priority.ALWAYS);
 
@@ -1112,10 +1132,10 @@ public class Dashboard {
 
         VBox header = new VBox(4);
         Label t = new Label(pageTitle);
-        t.setFont(Font.font("Georgia", FontWeight.BOLD, 28));
+        t.setFont(Font.font("Georgia", FontWeight.BOLD, 30));
         t.setTextFill(Color.web(C_TEXT));
         Label s = new Label(pageSubtitle);
-        s.setFont(Font.font("Courier New", 12));
+        s.setFont(Font.font("Avenir Next", 13));
         s.setTextFill(Color.web(C_MUTED));
         header.getChildren().addAll(t, s);
         outer.getChildren().add(header);
@@ -1138,7 +1158,7 @@ public class Dashboard {
     private VBox formRow(String labelText, javafx.scene.Node field) {
         VBox row = new VBox(6);
         Label lbl = new Label(labelText);
-        lbl.setFont(Font.font("Courier New", FontWeight.BOLD, 11));
+        lbl.setFont(Font.font("Avenir Next", FontWeight.BOLD, 12));
         lbl.setTextFill(Color.web(C_MUTED));
         row.getChildren().addAll(lbl, field);
         return row;
@@ -1147,7 +1167,7 @@ public class Dashboard {
     private TextField styledField(String prompt) {
         TextField tf = new TextField();
         tf.setPromptText(prompt);
-        tf.setFont(Font.font("Courier New", 13));
+        tf.setFont(Font.font("Avenir Next", 14));
         tf.setStyle("-fx-background-color:" + C_BG
                 + "; -fx-text-fill:" + C_TEXT
                 + "; -fx-prompt-text-fill:" + C_MUTED
@@ -1179,7 +1199,7 @@ public class Dashboard {
 
     private Label feedbackLabel() {
         Label l = new Label();
-        l.setFont(Font.font("Courier New", FontWeight.BOLD, 12));
+        l.setFont(Font.font("Avenir Next", FontWeight.BOLD, 13));
         l.setWrapText(true);
         l.setVisible(false);
         l.setManaged(false);
@@ -1206,7 +1226,7 @@ public class Dashboard {
 
     private Button primaryBtn(String text) {
         Button b = new Button(text);
-        b.setFont(Font.font("Courier New", FontWeight.BOLD, 13));
+        b.setFont(Font.font("Avenir Next", FontWeight.BOLD, 14));
         b.setMaxWidth(Double.MAX_VALUE);
         b.setStyle("-fx-background-color:" + C_ACCENT
                 + "; -fx-text-fill:#000000;"
@@ -1222,7 +1242,7 @@ public class Dashboard {
 
     private Button dangerBtn(String text) {
         Button b = new Button(text);
-        b.setFont(Font.font("Courier New", FontWeight.BOLD, 13));
+        b.setFont(Font.font("Avenir Next", FontWeight.BOLD, 14));
         b.setMaxWidth(Double.MAX_VALUE);
         b.setStyle("-fx-background-color:" + C_RED
                 + "; -fx-text-fill:#ffffff;"
@@ -1238,7 +1258,7 @@ public class Dashboard {
 
     private Button secondaryBtn(String text) {
         Button b = new Button(text);
-        b.setFont(Font.font("Courier New", FontWeight.BOLD, 12));
+        b.setFont(Font.font("Avenir Next", FontWeight.BOLD, 13));
         b.setStyle("-fx-background-color:transparent"
                 + "; -fx-text-fill:" + C_TEXT
                 + "; -fx-border-color:" + C_BORDER
@@ -1259,7 +1279,7 @@ public class Dashboard {
 
     private Label pageSection(String text) {
         Label l = new Label(text);
-        l.setFont(Font.font("Courier New", FontWeight.BOLD, 11));
+        l.setFont(Font.font("Avenir Next", FontWeight.BOLD, 12));
         l.setTextFill(Color.web(C_MUTED));
         l.setPadding(new Insets(4, 0, 0, 0));
         return l;

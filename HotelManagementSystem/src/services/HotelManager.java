@@ -36,9 +36,16 @@ public class HotelManager {
         }
     }
 
-    public void addRoom(Room room) {
+    public synchronized boolean addRoom(Room room) {
+        if (room == null) {
+            return false;
+        }
+        if (getRoomByNumber(room.getRoomNumber()) != null) {
+            return false;
+        }
         rooms.add(room);
         saveState();
+        return true;
     }
 
     public List<Room> getAvailableRooms() {
