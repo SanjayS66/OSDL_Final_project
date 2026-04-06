@@ -18,7 +18,6 @@ public abstract class Room implements Serializable {
     public void setAvailable(boolean available) { this.isAvailable = available; }
     public String getGuestName() { return null; }
 
-    // Abstract method to be overridden by subclasses
     public abstract double calculateTariff(int daysStayed);
     
     @Override

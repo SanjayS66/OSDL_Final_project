@@ -13,7 +13,7 @@ public class HotelManager {
         standardBaseTariff = RoomType.STANDARD.getBaseTariff();
         deluxeBaseTariff = RoomType.DELUXE.getBaseTariff();
 
-        // Attempt to load existing data from file
+        
         Object[] savedData = (Object[]) FileManager.loadData();
         if (savedData != null) {
             rooms = (ArrayList<Room>) savedData[0];
@@ -111,7 +111,7 @@ public class HotelManager {
         return (configuredBase * daysStayed) + surcharge;
     }
 
-    // Synchronized method to prevent double booking in multithreaded environments
+    
     public synchronized boolean bookRoom(int roomNumber, Customer customer) {
         for (Room r : rooms) {
             if (r.getRoomNumber() == roomNumber && r.isAvailable()) {
@@ -119,10 +119,10 @@ public class HotelManager {
                 customer.setAllocatedRoomNumber(roomNumber);
                 roomToCustomerMap.put(roomNumber, customer);
                 saveState();
-                return true; // Booking successful
+                return true; 
             }
         }
-        return false; // Room unavailable or not found
+        return false; 
     }
 
     public synchronized boolean checkout(int roomNumber) {

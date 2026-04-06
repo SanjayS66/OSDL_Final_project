@@ -11,7 +11,7 @@ public class Customer implements Serializable {
         this.customerId = customerId;
         this.name = name;
         this.contactNumber = contactNumber;
-        this.allocatedRoomNumber = -1; // -1 means no room allocated yet
+        this.allocatedRoomNumber = -1; 
     }
 
     public String getName() { return name; }

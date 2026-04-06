@@ -4,26 +4,20 @@ import models.*;
 import services.HotelManager;
 
 import javafx.animation.*;
-import javafx.application.Platform;
 import javafx.geometry.*;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.effect.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.*;
-import javafx.scene.shape.*;
 import javafx.scene.text.*;
+import javafx.stage.*;
 import javafx.util.Duration;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-/**
- * Redesigned Dashboard with:
- *  - Sidebar navigation (Dashboard / Add Room / Book Room / Checkout / All Rooms)
- *  - Animated page transitions (fade + translate)
- *  - Live stats cards on home page
- *  - Consistent dark-navy + amber accent design language
- */
+
 public class Dashboard {
 
     // ── palette ────────────────────────────────────────────────────────────────
@@ -79,7 +73,6 @@ public class Dashboard {
     private boolean adminAuthenticated = false;
     private String pendingProtectedPage = null;
 
-    // sidebar nav buttons kept for highlight toggling
     private Button navHome, navAddRoom, navBookRoom, navCheckout, navAllRooms, navSettings;
 
     // ── public entry point ─────────────────────────────────────────────────────
@@ -875,10 +868,11 @@ public class Dashboard {
                             ? "Guest"
                             : customer.getName();
                     feedbackOk(feedback, "✔  Room " + roomNo + " checked out successfully for " + guestName + ".");
-                    billSummary.setText(String.format("Bill Amount: Rs. %.2f for %d day(s)", billAmount, daysStayed));
+                    billSummary.setText(String.format("Bill generated for Room %d. See pop-up for details.", roomNo));
                     billSummary.setTextFill(Color.web(C_BLUE));
                     billSummary.setVisible(true);
                     billSummary.setManaged(true);
+                    showCheckoutBillPopup(room, customer, daysStayed, billAmount);
                     txtRoomNo.clear();
                     txtDaysStayed.clear();
                 } else {
@@ -1110,6 +1104,74 @@ public class Dashboard {
 
         row.getChildren().addAll(num, type, statusBadge, guest);
         return row;
+    }
+
+    private void showCheckoutBillPopup(Room room, Customer customer, int daysStayed, double totalAmount) {
+        Stage dialog = new Stage();
+        dialog.initModality(Modality.APPLICATION_MODAL);
+        if (rootView != null && rootView.getScene() != null && rootView.getScene().getWindow() != null) {
+            dialog.initOwner(rootView.getScene().getWindow());
+        }
+        dialog.setTitle("Checkout Bill Details");
+
+        String guestName = (customer == null || customer.getName() == null || customer.getName().isEmpty())
+                ? "Guest"
+                : customer.getName();
+        double configuredBaseTariff = room.getRoomType() == RoomType.DELUXE
+                ? manager.getDeluxeBaseTariff()
+                : manager.getStandardBaseTariff();
+        double baseSubtotal = configuredBaseTariff * daysStayed;
+        double premiumCharge = room.calculateTariff(1) - room.getRoomType().getBaseTariff();
+        if (premiumCharge < 0) {
+            premiumCharge = 0;
+        }
+
+        VBox root = new VBox(14);
+        root.setPadding(new Insets(20));
+        root.setStyle("-fx-background-color:" + C_BG + ";");
+
+        Label title = new Label("Checkout Invoice");
+        title.setFont(Font.font("Georgia", FontWeight.BOLD, 26));
+        title.setTextFill(Color.web(C_TEXT));
+
+        Label subtitle = new Label("Guest and room billing summary");
+        subtitle.setFont(Font.font("Avenir Next", 12));
+        subtitle.setTextFill(Color.web(C_MUTED));
+
+        VBox details = formCard();
+        details.setMaxWidth(Double.MAX_VALUE);
+
+        Label roomInfo = billLine(String.format("Room Details: #%d (%s)", room.getRoomNumber(), room.getRoomType()));
+        Label guestInfo = billLine("Guest: " + guestName);
+        Label stayInfo = billLine(String.format("Days Stayed: %d", daysStayed));
+        Label divider = billLine("-----------------------------------------------");
+        divider.setTextFill(Color.web(C_BORDER));
+
+        Label baseRate = billLine(String.format("Base Tariff / Day: Rs. %.2f", configuredBaseTariff));
+        Label baseCost = billLine(String.format("Base Charges (%d day(s)): Rs. %.2f", daysStayed, baseSubtotal));
+        Label premium = billLine(String.format("Premium / Amenities Charge: Rs. %.2f", premiumCharge));
+
+        Label total = new Label(String.format("Total Bill Amount: Rs. %.2f", totalAmount));
+        total.setFont(Font.font("Avenir Next", FontWeight.BOLD, 16));
+        total.setTextFill(Color.web(C_ACCENT));
+
+        Button closeBtn = primaryBtn("Close");
+        closeBtn.setOnAction(e -> dialog.close());
+
+        details.getChildren().addAll(roomInfo, guestInfo, stayInfo, divider, baseRate, baseCost, premium, total);
+        root.getChildren().addAll(title, subtitle, details, closeBtn);
+
+        Scene scene = new Scene(root, 560, 460);
+        dialog.setScene(scene);
+        dialog.showAndWait();
+    }
+
+    private Label billLine(String text) {
+        Label line = new Label(text);
+        line.setFont(Font.font("Avenir Next", 13));
+        line.setTextFill(Color.web(C_TEXT));
+        line.setWrapText(true);
+        return line;
     }
 
     // ══════════════════════════════════════════════════════════════════════════

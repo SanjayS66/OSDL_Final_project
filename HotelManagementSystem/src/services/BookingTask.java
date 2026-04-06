@@ -17,7 +17,7 @@ public class BookingTask implements Runnable {
         System.out.println(Thread.currentThread().getName() + " attempting to book room " + roomNumber + "...");
         
         try {
-            Thread.sleep(500); // Simulate processing time
+            Thread.sleep(500); 
         } catch (InterruptedException e) {
             System.out.println("Booking interrupted.");
         }
